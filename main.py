@@ -98,7 +98,7 @@ def parse_packet(packet: str) -> Optional[ScaleWeight]:
         return None
 
 
-def find_scale_port(description_text: str = "CP210x USB to UART Bridge") -> Optional[str]:
+def find_scale_port(description_text: str = "USB to UART Bridge") -> Optional[str]:
     """Finds the serial port corresponding to the scale device.
 
     Args:
@@ -106,6 +106,10 @@ def find_scale_port(description_text: str = "CP210x USB to UART Bridge") -> Opti
 
     Returns:
         str | None: The port name if found, or None otherwise.
+
+    Note - The same controller reports differently based on OS:
+        Windows: COM3 (Silicon Labs CP210x USB to UART Bridge (COM3))
+        Linux: /dev/ttyUSB0 (CP2102 USB to UART Bridge Controller - CP2102 USB to UART Bridge Controller)
     """
     ports: list[ListPortInfo] = comports()
     for port in ports:
