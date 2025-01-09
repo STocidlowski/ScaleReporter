@@ -11,6 +11,7 @@ local testing webpage: http://localhost:8080/
 import logging
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 from time import sleep
 import threading
@@ -172,7 +173,12 @@ def notify_clients(data: str):
 def get_webpage():
     """HTML endpoint, serves a page with javascript for real-time weight updates."""
     # TODO: API key authorization, or user authentication. TLS / encryption would be necessary before prod
-    return FileResponse('html\\static\\index.html')
+
+    base_dir = Path(__file__).resolve().parent
+    # Construct the full path to the index.html file
+    html_path = base_dir / "html" / "static" / "index.html"
+
+    return FileResponse(html_path)
 
 
 @app.get("/api", response_model=Optional[ScaleWeight])
