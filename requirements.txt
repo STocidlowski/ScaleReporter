@@ -1,0 +1,6 @@
+pyserial
+pydantic
+fastapi
+uvicorn
+websockets
+starlette
