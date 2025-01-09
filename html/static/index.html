@@ -58,9 +58,16 @@
     <button id="copy-button" style="display: none;">Copy Weight to Clipboard</button>
 
     <script>
+
+        // ATTENTION: Uncomment or edit to use the real server address. This page will not work otherwise
+
+        // const serverAddress = "scale-pi:8080";
+        // const serverAddress = "localhost:8080";
+        const serverAddress = "scale-pi.local:8080";
+
         const dataDiv = document.getElementById("data");
         const copyButton = document.getElementById("copy-button");
-        const ws = new WebSocket("ws://localhost:8080/ws");
+        const ws = new WebSocket(`ws://${serverAddress}/ws`);
         let eventDate = null; // Store the event time globally
         let latestWeight = null; // Store the latest weight (numeric only)
 

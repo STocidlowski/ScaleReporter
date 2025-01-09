@@ -127,7 +127,7 @@ Restart the system, then reconnect with your SSH client after about 60 seconds.
 sudo shutdown -r now
 ```
 
-### Install GIT 
+### Install GIT & Download Repository
 Install git, otherwise you will need to just copy player.py directly and create a 'videos' folder
 ```bash
 sudo apt install git -y
@@ -139,17 +139,121 @@ making another user run it. That would probably be better, but this is easier.
 git clone https://github.com/STocidlowski/ScaleReporter
 ```
 
-Try it out, see if it works. it will serve on :8080 by default, so paste the name of your pi into your browser. for example: `scale-pi.local:8080`
+### Make a venv and install requirements
+Make a "venv", a Virtual Environment, then install the requirements to this environment.
+```bash
+cd ScaleReporter
+python3 -m venv ScaleReporter
+source ScaleReporter/bin/activate
+pip install -r requirements.txt
+```
+### Testing
+Run it!
+```bash
+python3 ~/ScaleReporter/main.py
+```
 
+Try it out, see if it works. it will serve on :8080 by default.
+
+Paste the name of your pi into your browser. for example: `scale-pi.local:8080` 
+
+It should host a HTML page. If it does, we have success and we can plug in the scale and continue.
+
+- Use `ctr-z` to stop the program
+
+- When you're finished working in the virtual environment, run:
+```bash
+deactivate
+```
+
+Turn it off, signal shutdown
+```bash
+sudo shutdown -h now
+```
+
+Turn it off / unplug it after maybe 20 seconds. Relocate the pi to the scale and plug it in. 
 
 ---
 
-WIP, more to come
+Now that it is plugged into the scale, let's make sure we can see it the scale as an interface.
+
+### USB serial permissions
+
+List the USB devices connected. The scale only was here when I switched the USB ports. The Pi Zero does list one as for Power. Whoops.
+```bash
+sudo lsusb
+```
+You will hopefully find something similar to the following: `Bus 001 Device 002: ID 10c4:ea60 Silicon Labs CP210x UART Bridge`
+
+Check the group ownership of the serial port. `ttyUSB0` will likely be it if there are no other plugged in USB devices.
+```bash
+ls -l /dev/ttyUSB0
+```
+
+It should show serial port belongs to the `dialout` group
+
+Add the user to the `dialout` group
+```bash
+sudo usermod -aG dialout shawn
+```
+
+## Set up an automatic service to start the program
+
+Setup the ScaleReporter service:
+```bash
+sudo nano /etc/systemd/system/ScaleReporter.service
+```
+
+Paste the following into the editor, fixing the directory name if it is different and save:
+```systemd
+[Unit]
+Description=ScaleReporter
+After=network.target
+
+[Service]
+WorkingDirectory=/home/shawn/ScaleReporter/
+ExecStart=/home/shawn/ScaleReporter/ScaleReporter/bin/python /home/shawn/ScaleReporter/main.py
+Restart=always
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=journal
+StandardError=journal
+User=shawn
+Group=dialout
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable ScaleReporter.service
+```
+
+Reload the daemon if you make any changes
+```bash
+systemctl daemon-reload
+```
+
+Check the logs to see if everything went right:
+```bash
+journalctl -u ScaleReporter.service
+```
+
+Follow the logs in real-time with "-f"
+```bash
+journalctl -u ScaleReporter.service -f
+```
+
+## Final Test:
+
+Restart and see if you can log in from your browser.
+```bash
+sudo shutdown -r now
+```
 
 ---
 
 
-# Usage
+# General Usage
 
 Start the Server:
 
@@ -166,17 +270,15 @@ Access the API:
 Connect via WebSocket:
 - Connect to ws://localhost:8080/ws to receive live updates.
 
-File Structure
+# File Structure
 ```
 ├── main.py            # Main application file
 ├── html/
 │   └── static/
 │       └── index.html # Frontend HTML with JavaScript for WebSocket integration
 ├── requirements.txt   # Python dependencies
-├── LICENSE            # License file (MIT)
 ├── README.md          # Project documentation
 ```
-
 
 # Development
 
@@ -194,34 +296,6 @@ This project is licensed under the MIT License. You are free to use, modify, and
 
 # Acknowledgments
 
-- FastAPI for the web framework.
+- FastAPI for the web framework. Love it.
 - Pydantic for data validation and parsing.
-- Health o meter Scales for their reliable hardware, and for publishing of their protocol publicly.
-
----
-
-### `LICENSE` (MIT License)
-
-```plaintext
-MIT License
-
-Copyright (c) 2025 [Your Name]
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+- Health o meter Scales (Sunbeam) for their reliable hardware, and for publishing of their protocol publicly.
